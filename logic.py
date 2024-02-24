@@ -51,11 +51,14 @@ def crear_lotes(n):
     lote = []
     
     for i in range(n):
+        tiempo_maximo = getTiempoMaxEstimado()
         proceso = {
             'nombre': random.choice(nombre_programadores),
             'operacion': getOperacion(),
-            'tiempo_maximo': getTiempoMaxEstimado(),
-            'numero_programa': num_programa 
+            'tiempo_maximo': tiempo_maximo,
+            'tiempo_restante': tiempo_maximo, 
+            'numero_programa': num_programa,
+            'interrumpido': False
         }
         
         lote.append(proceso)
@@ -115,8 +118,12 @@ def en_espera(lotes, procesosEnEspera_text):
             lote_actual.extend(lote_siguiente)
             
     procesosEnEspera_text.delete('1.0', END)  
-    for proceso in lote_actual[1:]:  #Muestra los procesos en espera
-        procesosEnEspera_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\nTME: {proceso['tiempo_maximo']}\n\n")
+    for proceso in lote_actual[1:]:
+        tiempo = proceso['tiempo_restante'] if proceso['tiempo_restante'] != proceso['tiempo_maximo'] else proceso['tiempo_maximo']
+        if proceso['interrumpido']:  #Si el proceso fue interrumpido
+            procesosEnEspera_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\nTME: {proceso['tiempo_maximo']}\nTiempo restante: {round(proceso['tiempo_restante'])}\n\n")
+        else:
+            procesosEnEspera_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\nTME: {proceso['tiempo_maximo']}\n\n")
 
 def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
     lote_actual = lotes[0]  # Toma el primer lote
@@ -126,7 +133,8 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
         tiempo_inicio_proceso = time.time() - start_time
         
     tiempo_transcurrido = time.time() - start_time - tiempo_inicio_proceso
-    tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
+    # tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
+    tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
     ejecucion_text.delete('1.0', END) 
     
     if lote_actual: #Muestra el proceso en ejecución
@@ -179,6 +187,26 @@ def generar_procesos(noProcesos_entry, ejecucion_text, noLotesPendientes_label, 
     update_clock(relojGlobal_label, root)  # Inicia el reloj 
     ejecutar_proceso(lotes, noLotesPendientes_label, ejecucion_text, root, procesosEnEspera_text, terminados_text, obtenerResultadosBtn)  # Inicia el "bucle"
 
+# Función para interrumpir el proceso actual
+def interrumpir_proceso():
+    global start_time
+    if lotes:  # Si hay lotes
+        lote_actual = lotes[0]  # Toma el primer lote
+        if lote_actual:  # Si hay procesos en el lote
+            proceso = lote_actual.pop(0)  # Toma y elimina el primer proceso
+            tiempo_transcurrido = time.time() - start_time
+            proceso['tiempo_restante'] -= tiempo_transcurrido  # Actualiza el tiempo restante
+            proceso['interrumpido'] = True  # Marca el proceso como interrumpido
+            lote_actual.append(proceso)  # Mueve el proceso al final de la cola de espera
+            start_time = time.time()  # Actualiza el tiempo de inicio
+    print('interrumpir')
 
+# Función para terminar el proceso actual
+def terminar_proceso():
+    if lotes:  # Si hay lotes
+        lote_actual = lotes[0]  # Toma el primer lote
+        if lote_actual:  # Si hay procesos en el lote
+            lote_actual.pop(0)  # Elimina el primer proceso
+    print('error')
 
 
