@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import ttk
 
 start_time = None #Variable para el reloj
+tiempo_transcurrido_proceso = 0 #Variable para el tiempo transcurrido
 clock_running = True #Variable para validar si el reloj esta corriendo
 lotes = [] #Array de lotes
 lotes_terminados = [] #Array de lotes terminados
@@ -126,6 +127,8 @@ def en_espera(lotes, procesosEnEspera_text):
             procesosEnEspera_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\nTME: {proceso['tiempo_maximo']}\n\n")
 
 def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
+    global tiempo_transcurrido_proceso
+    
     lote_actual = lotes[0]  # Toma el primer lote
     procesoEnEjecucion = lote_actual[0]  # Toma el primer proceso en espera
     
@@ -133,10 +136,15 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
         tiempo_inicio_proceso = time.time() - start_time
         
     tiempo_transcurrido = time.time() - start_time - tiempo_inicio_proceso
-    # tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
-    tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
+    if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
+        procesoEnEjecucion['interrumpido'] = False  # Marca el proceso como no interrumpido
+        tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
+    else:
+        tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
+    
     ejecucion_text.delete('1.0', END) 
     
+    tiempo_transcurrido_proceso += 1
     if lote_actual: #Muestra el proceso en ejecución
         ejecucion_text.insert(END, f"{procesoEnEjecucion['numero_programa']}. {procesoEnEjecucion['nombre']}\n{procesoEnEjecucion['operacion']}\nTME: {round(tiempo_restante) if tiempo_restante > 0 else 0}")
     return tiempo_restante, tiempo_inicio_proceso
@@ -189,16 +197,15 @@ def generar_procesos(noProcesos_entry, ejecucion_text, noLotesPendientes_label, 
 
 # Función para interrumpir el proceso actual
 def interrumpir_proceso():
-    global start_time
+    global tiempo_transcurrido_proceso
     if lotes:  # Si hay lotes
         lote_actual = lotes[0]  # Toma el primer lote
         if lote_actual:  # Si hay procesos en el lote
             proceso = lote_actual.pop(0)  # Toma y elimina el primer proceso
-            tiempo_transcurrido = time.time() - start_time
-            proceso['tiempo_restante'] -= tiempo_transcurrido  # Actualiza el tiempo restante
+            proceso['tiempo_restante'] -= tiempo_transcurrido_proceso  # Actualiza el tiempo restante
             proceso['interrumpido'] = True  # Marca el proceso como interrumpido
             lote_actual.append(proceso)  # Mueve el proceso al final de la cola de espera
-            start_time = time.time()  # Actualiza el tiempo de inicio
+            tiempo_transcurrido_proceso = 0  # Resetea el tiempo transcurrido
     print('interrumpir')
 
 # Función para terminar el proceso actual
