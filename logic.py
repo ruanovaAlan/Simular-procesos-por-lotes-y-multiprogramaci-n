@@ -57,7 +57,7 @@ def crear_lotes(n):
             'nombre': random.choice(nombre_programadores),
             'operacion': getOperacion(),
             'tiempo_maximo': tiempo_maximo,
-            'tiempo_restante': tiempo_maximo, 
+            'tiempo_restante': tiempo_maximo,
             'numero_programa': num_programa,
             'interrumpido': False
         }
@@ -110,7 +110,6 @@ def resultados_a_txt():
             file.write('\n')
 
 
-
 def en_espera(lotes, procesosEnEspera_text):
     lote_actual = lotes[0]
     if len(lote_actual) == 1:  # Si solo queda un proceso en el lote actual
@@ -134,20 +133,26 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
     
     if tiempo_inicio_proceso is None:  # Si es la primera vez que se llama a la función para este proceso
         tiempo_inicio_proceso = time.time() - start_time
+        tiempo_transcurrido_proceso = 0
+    
+    # if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
+    #     tiempo_transcurrido = 0
         
-    tiempo_transcurrido = time.time() - start_time - tiempo_inicio_proceso
+    # tiempo_transcurrido = time.time() - start_time - tiempo_inicio_proceso
+    tiempo_transcurrido_proceso += 1
+    tiempo_transcurrido = tiempo_transcurrido_proceso
     if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
-        procesoEnEjecucion['interrumpido'] = False  # Marca el proceso como no interrumpido
         tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
+        #procesoEnEjecucion['interrumpido'] = False  # Marca el proceso como no interrumpido
     else:
         tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
     
     ejecucion_text.delete('1.0', END) 
     
-    tiempo_transcurrido_proceso += 1
     if lote_actual: #Muestra el proceso en ejecución
         ejecucion_text.insert(END, f"{procesoEnEjecucion['numero_programa']}. {procesoEnEjecucion['nombre']}\n{procesoEnEjecucion['operacion']}\nTME: {round(tiempo_restante) if tiempo_restante > 0 else 0}")
     return tiempo_restante, tiempo_inicio_proceso
+
 
 def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tiempo_inicio_proceso, ejecucion_text, obtenerResultadosBtn):
     lote_actual = lotes[0]
@@ -207,6 +212,7 @@ def interrumpir_proceso():
             lote_actual.append(proceso)  # Mueve el proceso al final de la cola de espera
             tiempo_transcurrido_proceso = 0  # Resetea el tiempo transcurrido
     print('interrumpir')
+
 
 # Función para terminar el proceso actual
 def terminar_proceso():
