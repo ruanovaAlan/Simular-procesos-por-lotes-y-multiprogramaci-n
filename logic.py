@@ -9,6 +9,8 @@ tiempo_transcurrido_proceso = 0 #Variable para el tiempo transcurrido
 clock_running = True #Variable para validar si el reloj esta corriendo
 lotes = [] #Array de lotes
 lotes_terminados = [] #Array de lotes terminados
+num_lote = 1 #Variable para el número de lote para los procesos terminados
+cont_procesos = 0 #Variable para contar los procesos terminados
 
 
 
@@ -135,9 +137,6 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
     if tiempo_inicio_proceso is None:  # Si es la primera vez que se llama a la función para este proceso
         tiempo_inicio_proceso = time.time() - start_time
         tiempo_transcurrido_proceso = 0
-    
-    # if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
-    #     tiempo_transcurrido = 0
         
     tiempo_transcurrido_proceso += 1
     tiempo_transcurrido = tiempo_transcurrido_proceso
@@ -161,9 +160,14 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
 
 def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tiempo_inicio_proceso, ejecucion_text, obtenerResultadosBtn):
     lote_actual = lotes[0]
+    global num_lote, cont_procesos
     
     if tiempo_restante <= 0:  #? cambiar el tiempo a 0
+        if len(procesos_terminados) == 0 or cont_procesos % 5 == 0:  # Si hemos terminado 5 procesos
+            procesos_terminados.append(f"Lote {num_lote}")  # Añadimos el número de lote
+            num_lote += 1
         procesos_terminados.append(lote_actual.pop(0))  # Elimina el proceso de la lista de procesos en espera y lo añade a la lista de procesos terminados
+        cont_procesos += 1
         tiempo_inicio_proceso = None  # Resetea el tiempo de inicio para el próximo proceso
         if not lote_actual:  # Si el lote actual está vacío
             lotes.pop(0)  # Elimina el lote de la lista de lotes
@@ -172,11 +176,14 @@ def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tie
     terminados_text.delete('1.0', END)
     
     for proceso in procesos_terminados: #Muestra los procesos terminados
-        if proceso['error']:
-            terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\n\n")
+        if type(proceso) == str:
+            terminados_text.insert(END, f"{proceso}\n\n")
         else:
-            resultado = round(eval(proceso['operacion']), 4)
-            terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']} = {resultado}\n\n")
+            if proceso['error']:
+                terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\n\n")
+            else:
+                resultado = round(eval(proceso['operacion']), 4)
+                terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']} = {resultado}\n\n")
     
     # Si todos los lotes están vacíos, habilita el botón obtenerResultadosBtn
     if not lotes:
@@ -184,6 +191,7 @@ def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tie
         stop_clock() #Detiene el reloj si no hay más procesos
     
     return tiempo_inicio_proceso
+
 
 def ejecutar_proceso(lotes, noLotesPendientes_label, ejecucion_text, root, procesosEnEspera_text, terminados_text, obtenerResultadosBtn, procesos_terminados=[], tiempo_inicio_proceso=None):
     if lotes:  
