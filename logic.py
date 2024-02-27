@@ -59,7 +59,8 @@ def crear_lotes(n):
             'tiempo_maximo': tiempo_maximo,
             'tiempo_restante': tiempo_maximo,
             'numero_programa': num_programa,
-            'interrumpido': False
+            'interrumpido': False,
+            'error': False
         }
         
         lote.append(proceso)
@@ -138,12 +139,13 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
     # if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
     #     tiempo_transcurrido = 0
         
-    # tiempo_transcurrido = time.time() - start_time - tiempo_inicio_proceso
     tiempo_transcurrido_proceso += 1
     tiempo_transcurrido = tiempo_transcurrido_proceso
     if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
         tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
         #procesoEnEjecucion['interrumpido'] = False  # Marca el proceso como no interrumpido
+    elif procesoEnEjecucion['error']:  # Si el proceso fue interrumpido
+        tiempo_restante = 0
     else:
         tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
     
@@ -170,8 +172,11 @@ def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tie
     terminados_text.delete('1.0', END)
     
     for proceso in procesos_terminados: #Muestra los procesos terminados
-        resultado = round(eval(proceso['operacion']), 4)
-        terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']} = {resultado}\n\n")
+        if proceso['error']:
+            terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\n\n")
+        else:
+            resultado = round(eval(proceso['operacion']), 4)
+            terminados_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']} = {resultado}\n\n")
     
     # Si todos los lotes están vacíos, habilita el botón obtenerResultadosBtn
     if not lotes:
@@ -214,15 +219,17 @@ def interrumpir_proceso():
             proceso['interrumpido'] = True  # Marca el proceso como interrumpido
             lote_actual.append(proceso)  # Mueve el proceso al final de la cola de espera
             tiempo_transcurrido_proceso = 0  # Resetea el tiempo transcurrido
-    print('interrumpir')
-
 
 # Función para terminar el proceso actual
 def terminar_proceso():
+    global tiempo_transcurrido_proceso
     if lotes:  # Si hay lotes
         lote_actual = lotes[0]  # Toma el primer lote
         if lote_actual:  # Si hay procesos en el lote
-            lote_actual.pop(0)  # Elimina el primer proceso
-    print('error')
+            proceso = lote_actual[0]  # Toma el primer proceso
+            # proceso['tiempo_restante'] = 0  # Actualiza el tiempo restante
+            proceso['error'] = True  # Marca el proceso como interrumpido
+            proceso['operacion'] += ' = ERROR'  # Asigna ERROR a la operación
+            tiempo_transcurrido_proceso = 0  # Resetea el tiempo transcurrido
 
 
