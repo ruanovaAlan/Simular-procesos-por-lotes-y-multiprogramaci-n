@@ -50,7 +50,6 @@ def crear_lotes(n):
     nombre_programadores = ['Alan', 'Juan', 'Jenny', 'Luis', 'Maria', 'Pedro', 'Sofia', 'Tom', 'Valeria', 'Ximena']
     num_programa = 1
     global lotes
-    global lotes_terminados
     lote = []
     
     for i in range(n):
@@ -74,9 +73,7 @@ def crear_lotes(n):
             lote = []
     if lote:
         lotes.append(lote)
-        
-    # Hacer una copia profunda de lotes en lotes_terminados
-    lotes_terminados = copy.deepcopy(lotes)
+
 
 
 
@@ -100,17 +97,16 @@ def lotes_a_txt():
 #Funcion para escribir resultados a un archivo
 def resultados_a_txt():
     global lotes_terminados 
-    with open('Resultados.txt', 'w') as file:
-        for i, lote in enumerate(lotes_terminados, start=1):
-            file.write(f'Lote {i}:\n')
-            file.write('\n')
-            for proceso in lote:
-                resultado = eval(proceso['operacion'])
-                file.write(f"{proceso['numero_programa']}. {proceso['nombre']}\n")
-                file.write(f"{proceso['operacion']} = {resultado}\n")
-                file.write('\n')
-                file.write('\n')
-            file.write('\n')
+    with open('Resultados.txt', 'w') as file:            
+        for proceso in lotes_terminados: #Muestra los procesos terminados
+            if type(proceso) == str:
+                file.write(f"{proceso}\n\n")
+            else:
+                if proceso['error']:
+                    file.write(f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\n\n")
+                else:
+                    resultado = round(eval(proceso['operacion']), 4)
+                    file.write(f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']} = {resultado}\n\n")
 
 
 def en_espera(lotes, procesosEnEspera_text):
@@ -140,11 +136,11 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
         
     tiempo_transcurrido_proceso += 1
     tiempo_transcurrido = tiempo_transcurrido_proceso
-    if procesoEnEjecucion['interrumpido']:  # Si el proceso fue interrumpido
-        tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
-        #procesoEnEjecucion['interrumpido'] = False  # Marca el proceso como no interrumpido
-    elif procesoEnEjecucion['error']:  # Si el proceso fue interrumpido
+    
+    if procesoEnEjecucion['error']:  # If the process has an error
         tiempo_restante = 0
+    elif procesoEnEjecucion['interrumpido']:  # If the process was interrupted
+        tiempo_restante = procesoEnEjecucion['tiempo_restante'] - tiempo_transcurrido
     else:
         tiempo_restante = procesoEnEjecucion['tiempo_maximo'] - tiempo_transcurrido
     
@@ -160,13 +156,14 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
 
 def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tiempo_inicio_proceso, ejecucion_text, obtenerResultadosBtn):
     lote_actual = lotes[0]
-    global num_lote, cont_procesos
+    global num_lote, cont_procesos, lotes_terminados
     
     if tiempo_restante <= 0:  #? cambiar el tiempo a 0
         if len(procesos_terminados) == 0 or cont_procesos % 5 == 0:  # Si hemos terminado 5 procesos
-            procesos_terminados.append(f"Lote {num_lote}")  # Añadimos el número de lote
+            procesos_terminados.append(f"Lote {num_lote}:")  # Añadimos el número de lote
             num_lote += 1
         procesos_terminados.append(lote_actual.pop(0))  # Elimina el proceso de la lista de procesos en espera y lo añade a la lista de procesos terminados
+        
         cont_procesos += 1
         tiempo_inicio_proceso = None  # Resetea el tiempo de inicio para el próximo proceso
         if not lote_actual:  # Si el lote actual está vacío
@@ -187,6 +184,7 @@ def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tie
     
     # Si todos los lotes están vacíos, habilita el botón obtenerResultadosBtn
     if not lotes:
+        lotes_terminados = copy.deepcopy(procesos_terminados)
         obtenerResultadosBtn.config(state='normal')
         stop_clock() #Detiene el reloj si no hay más procesos
     
@@ -235,7 +233,6 @@ def terminar_proceso():
         lote_actual = lotes[0]  # Toma el primer lote
         if lote_actual:  # Si hay procesos en el lote
             proceso = lote_actual[0]  # Toma el primer proceso
-            # proceso['tiempo_restante'] = 0  # Actualiza el tiempo restante
             proceso['error'] = True  # Marca el proceso como interrumpido
             proceso['operacion'] += ' = ERROR'  # Asigna ERROR a la operación
             tiempo_transcurrido_proceso = 0  # Resetea el tiempo transcurrido
