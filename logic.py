@@ -118,7 +118,6 @@ def en_espera(lotes, procesosEnEspera_text):
             
     procesosEnEspera_text.delete('1.0', END)  
     for proceso in lote_actual[1:]:
-        tiempo = proceso['tiempo_restante'] if proceso['tiempo_restante'] != proceso['tiempo_maximo'] else proceso['tiempo_maximo']
         if proceso['interrumpido']:  #Si el proceso fue interrumpido
             procesosEnEspera_text.insert(END, f"{proceso['numero_programa']}. {proceso['nombre']}\n{proceso['operacion']}\nTME: {proceso['tiempo_maximo']}\nTiempo restante: {round(proceso['tiempo_restante'])}\n\n")
         else:
