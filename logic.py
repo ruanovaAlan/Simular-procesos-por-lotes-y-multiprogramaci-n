@@ -10,6 +10,7 @@ clock_running = True #Variable para validar si el reloj esta corriendo
 lotes = [] #Array de lotes
 lotes_terminados = [] #Array de lotes terminados
 num_lote = 1 #Variable para el número de lote para los procesos terminados
+end_lote = False
 cont_procesos = 0 #Variable para contar los procesos terminados
 
 
@@ -110,8 +111,10 @@ def resultados_a_txt():
 
 
 def en_espera(lotes, procesosEnEspera_text):
+    global end_lote
     lote_actual = lotes[0]
     if len(lote_actual) == 1:  # Si solo queda un proceso en el lote actual
+        end_lote = True
         if lotes[1:]:
             lote_siguiente = lotes.pop(1)  # Toma el siguiente lote
             lote_actual.extend(lote_siguiente)
@@ -155,14 +158,14 @@ def en_ejecucion(lotes, ejecucion_text, tiempo_inicio_proceso):
 
 def terminados(lotes, terminados_text, procesos_terminados, tiempo_restante, tiempo_inicio_proceso, ejecucion_text, obtenerResultadosBtn):
     lote_actual = lotes[0]
-    global num_lote, cont_procesos, lotes_terminados
+    global num_lote, cont_procesos, lotes_terminados, end_lote
     
     if tiempo_restante <= 0:  #? cambiar el tiempo a 0
         if len(procesos_terminados) == 0 or cont_procesos % 5 == 0:  # Si hemos terminado 5 procesos
             procesos_terminados.append(f"Lote {num_lote}:")  # Añadimos el número de lote
             num_lote += 1
         procesos_terminados.append(lote_actual.pop(0))  # Elimina el proceso de la lista de procesos en espera y lo añade a la lista de procesos terminados
-        
+        end_lote = False
         cont_procesos += 1
         tiempo_inicio_proceso = None  # Resetea el tiempo de inicio para el próximo proceso
         if not lote_actual:  # Si el lote actual está vacío
@@ -215,10 +218,10 @@ def generar_procesos(noProcesos_entry, ejecucion_text, noLotesPendientes_label, 
 
 # Función para interrumpir el proceso actual
 def interrumpir_proceso():
-    global tiempo_transcurrido_proceso
+    global tiempo_transcurrido_proceso, end_lote
     if lotes:  # Si hay lotes
         lote_actual = lotes[0]  # Toma el primer lote
-        if lote_actual:  # Si hay procesos en el lote
+        if lote_actual and end_lote == False:  # Si hay procesos en el lote
             proceso = lote_actual.pop(0)  # Toma y elimina el primer proceso
             proceso['tiempo_restante'] -= tiempo_transcurrido_proceso  # Actualiza el tiempo restante
             proceso['interrumpido'] = True  # Marca el proceso como interrumpido
